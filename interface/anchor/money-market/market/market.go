@@ -5,7 +5,7 @@ import (
 
 	"github.com/frostornge/terra-go"
 	"github.com/frostornge/terra-go/bind"
-	"github.com/frostornge/terra-go/interface/terra/cw20"
+	"github.com/frostornge/terra-go/interface/cw20"
 
 	"github.com/airbloc/logger"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
