@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/frostornge/terra-go"
+	"github.com/frostornge/terra-go/types"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -80,7 +81,7 @@ func (t token) TransferMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "transfer",
-		terra.Q{
+		types.Q{
 			"recipient": recipient.String(),
 			"amount":    amount.String(),
 		},
@@ -96,7 +97,7 @@ func (t token) TransferFromMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "transfer_from",
-		terra.Q{
+		types.Q{
 			"owner":     owner.String(),
 			"recipient": recipient.String(),
 			"amount":    amount.String(),
@@ -111,7 +112,7 @@ func (t token) BurnMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "burn",
-		terra.Q{"amount": amount.String()},
+		types.Q{"amount": amount.String()},
 		nil,
 	)
 }
@@ -123,7 +124,7 @@ func (t token) BurnFromMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "burn_from",
-		terra.Q{
+		types.Q{
 			"owner":  owner.String(),
 			"amount": amount.String(),
 		},
@@ -137,7 +138,7 @@ func (t token) SendMsg(
 	amount cosmostypes.Int,
 	hook interface{},
 ) ([]cosmostypes.Msg, error) {
-	payload := terra.Q{
+	payload := types.Q{
 		"contract": contract.String(),
 		"amount":   amount.String(),
 	}
@@ -158,7 +159,7 @@ func (t token) SendFromMsg(
 	amount cosmostypes.Int,
 	hook interface{},
 ) ([]cosmostypes.Msg, error) {
-	payload := terra.Q{
+	payload := types.Q{
 		"owner":    owner.String(),
 		"contract": contract.String(),
 		"amount":   amount.String(),
@@ -180,7 +181,7 @@ func (t token) MintMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "mint",
-		terra.Q{
+		types.Q{
 			"recipient": recipient.String(),
 			"amount":    amount.String(),
 		},
@@ -196,7 +197,7 @@ func (t token) IncreaseAllowanceMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "increase_allowance",
-		terra.Q{
+		types.Q{
 			"spender": spender.String(),
 			"amount":  amount.String(),
 			"expires": expires,
@@ -213,7 +214,7 @@ func (t token) DecreaseAllowanceMsg(
 ) ([]cosmostypes.Msg, error) {
 	return t.MakeMessage(
 		acc, "decrease_allowance",
-		terra.Q{
+		types.Q{
 			"spender": spender.String(),
 			"amount":  amount.String(),
 			"expires": expires,

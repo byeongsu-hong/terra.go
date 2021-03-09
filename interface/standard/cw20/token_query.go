@@ -3,8 +3,9 @@ package cw20
 import (
 	"context"
 
+	"github.com/frostornge/terra-go/types"
+
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/frostornge/terra-go"
 )
 
 var _ Querier = (*token)(nil)
@@ -19,7 +20,7 @@ type Querier interface {
 }
 
 func (t token) GetBalance(ctx context.Context, owner cosmostypes.AccAddress) (GetTokenBalanceResponse, error) {
-	var query = terra.Q{"address": owner.String()}
+	var query = types.Q{"address": owner.String()}
 
 	var resp struct {
 		Height cosmostypes.Uint `json:"height"`
@@ -28,7 +29,7 @@ func (t token) GetBalance(ctx context.Context, owner cosmostypes.AccAddress) (Ge
 		} `json:"result"`
 	}
 
-	if err := t.Query(ctx, terra.Q{"balance": query}, &resp); err != nil {
+	if err := t.Query(ctx, types.Q{"balance": query}, &resp); err != nil {
 		return GetTokenBalanceResponse{}, err
 	}
 
@@ -39,28 +40,28 @@ func (t token) GetBalance(ctx context.Context, owner cosmostypes.AccAddress) (Ge
 }
 
 func (t token) GetTokenInfo(ctx context.Context) (GetTokenInfoResponse, error) {
-	var query = terra.Q{}
+	var query = types.Q{}
 
 	var resp struct {
 		Height cosmostypes.Uint     `json:"height"`
 		Result GetTokenInfoResponse `json:"result"`
 	}
 
-	if err := t.Query(ctx, terra.Q{"token_info": query}, &resp); err != nil {
+	if err := t.Query(ctx, types.Q{"token_info": query}, &resp); err != nil {
 		return GetTokenInfoResponse{}, err
 	}
 	return resp.Result, nil
 }
 
 func (t token) GetMinter(ctx context.Context) (GetMinterResponse, error) {
-	var query = terra.Q{}
+	var query = types.Q{}
 
 	var resp struct {
 		Height cosmostypes.Uint  `json:"height"`
 		Result GetMinterResponse `json:"result"`
 	}
 
-	if err := t.Query(ctx, terra.Q{"minter": query}, &resp); err != nil {
+	if err := t.Query(ctx, types.Q{"minter": query}, &resp); err != nil {
 		return GetMinterResponse{}, err
 	}
 	return resp.Result, nil
@@ -71,7 +72,7 @@ func (t token) GetAllowance(
 	owner cosmostypes.AccAddress,
 	spender cosmostypes.AccAddress,
 ) (GetAllowanceResponse, error) {
-	var query = terra.Q{
+	var query = types.Q{
 		"owner":   owner.String(),
 		"spender": spender.String(),
 	}
@@ -81,7 +82,7 @@ func (t token) GetAllowance(
 		Result GetAllowanceResponse `json:"result"`
 	}
 
-	if err := t.Query(ctx, terra.Q{"allowance": query}, &resp); err != nil {
+	if err := t.Query(ctx, types.Q{"allowance": query}, &resp); err != nil {
 		return GetAllowanceResponse{}, err
 	}
 	return resp.Result, nil
@@ -93,7 +94,7 @@ func (t token) GetAllAllowances(
 	startAfter *cosmostypes.AccAddress,
 	limit *uint32,
 ) ([]GetAllowanceResponse, error) {
-	var query = terra.Q{"owner": owner.String()}
+	var query = types.Q{"owner": owner.String()}
 	if startAfter != nil {
 		query["start_after"] = (*startAfter).String()
 	}
@@ -108,7 +109,7 @@ func (t token) GetAllAllowances(
 		} `json:"result"`
 	}
 
-	if err := t.Query(ctx, terra.Q{"all_allowances": query}, &resp); err != nil {
+	if err := t.Query(ctx, types.Q{"all_allowances": query}, &resp); err != nil {
 		return nil, err
 	}
 	return resp.Result.Allowances, nil
@@ -119,7 +120,7 @@ func (t token) GetAllAccounts(
 	startAfter *cosmostypes.AccAddress,
 	limit *uint32,
 ) ([]cosmostypes.AccAddress, error) {
-	var query = terra.Q{}
+	var query = types.Q{}
 	if startAfter != nil {
 		query["start_after"] = (*startAfter).String()
 	}
@@ -134,7 +135,7 @@ func (t token) GetAllAccounts(
 		} `json:"result"`
 	}
 
-	if err := t.Query(ctx, terra.Q{"all_accounts": query}, &resp); err != nil {
+	if err := t.Query(ctx, types.Q{"all_accounts": query}, &resp); err != nil {
 		return nil, err
 	}
 	return resp.Result.Accounts, nil

@@ -2,6 +2,7 @@ package market
 
 import (
 	"github.com/frostornge/terra-go"
+	"github.com/frostornge/terra-go/types"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -38,7 +39,7 @@ func (m market) BorrowStableMsg(
 	amount cosmostypes.Int,
 	to *cosmostypes.AccAddress,
 ) ([]cosmostypes.Msg, error) {
-	payload := terra.Q{"borrow_amount": amount.String()}
+	payload := types.Q{"borrow_amount": amount.String()}
 	if to != nil {
 		payload["to"] = (*to).String()
 	}
@@ -71,7 +72,7 @@ func (m market) RedeemStableMsg(
 ) ([]cosmostypes.Msg, error) {
 	sendMsgs, err := m.anchored.SendMsg(
 		acc, m.GetAddress(), amount,
-		terra.Q{"redeem_stable": terra.Q{}},
+		types.Q{"redeem_stable": types.Q{}},
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "make cw20 send message")
