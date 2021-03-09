@@ -1,4 +1,4 @@
-package terra
+package bind
 
 import (
 	"encoding/json"

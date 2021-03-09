@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/frostornge/terra-go"
+	"github.com/frostornge/terra-go/types"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -24,11 +25,11 @@ type BaseContract interface {
 		ctx context.Context,
 		acc terra.Account,
 		msgs []cosmostypes.Msg,
-		mode *terra.BroadcastMode,
+		mode *types.BroadcastMode,
 		opts *terra.CreateTxOptions,
 	) (cosmostypes.TxResponse, error)
 
-	Query(ctx context.Context, query terra.Q, resp interface{}) error
+	Query(ctx context.Context, query types.Q, resp interface{}) error
 }
 
 type baseContract struct {
@@ -53,13 +54,13 @@ func (b baseContract) MakeMessage(
 	coins cosmostypes.Coins,
 ) ([]cosmostypes.Msg, error) {
 	if payload == nil {
-		payload = terra.Q{}
+		payload = types.Q{}
 	}
 
-	executeMsg, err := terra.GenerateExecuteMsg(
+	executeMsg, err := GenerateExecuteMsg(
 		acc.GetAddress(),
 		b.addr,
-		terra.Q{method: payload},
+		types.Q{method: payload},
 		coins,
 	)
 	if err != nil {
@@ -72,7 +73,7 @@ func (b baseContract) Execute(
 	ctx context.Context,
 	acc terra.Account,
 	msgs []cosmostypes.Msg,
-	mode *terra.BroadcastMode,
+	mode *types.BroadcastMode,
 	opts *terra.CreateTxOptions,
 ) (cosmostypes.TxResponse, error) {
 	createOption := terra.CreateTxOptions{GasAdjustment: 1.2}
@@ -86,7 +87,7 @@ func (b baseContract) Execute(
 		return cosmostypes.TxResponse{}, errors.Wrap(err, "sign tx")
 	}
 
-	broadcastMode := terra.ModeBlock
+	broadcastMode := types.ModeBlock
 	if mode != nil {
 		broadcastMode = *mode
 	}
@@ -98,7 +99,7 @@ func (b baseContract) Execute(
 	return resp, nil
 }
 
-func (b baseContract) Query(ctx context.Context, query terra.Q, resp interface{}) error {
+func (b baseContract) Query(ctx context.Context, query types.Q, resp interface{}) error {
 	if err := b.client.Contract().QueryContractStore(ctx, b.addr, query, resp); err != nil {
 		return errors.Wrap(err, "query contract store")
 	}

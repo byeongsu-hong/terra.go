@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/frostornge/terra-go"
+	"github.com/frostornge/terra-go/types"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
@@ -9,7 +9,7 @@ import (
 type QueryTxRequest struct {
 	Page  *int64  `json:"page"`
 	Limit *int64  `json:"limit"`
-	Query terra.Q `json:"query"`
+	Query types.Q `json:"query"`
 }
 
 type QueryTxResponse struct {

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/frostornge/terra-go"
 	"github.com/frostornge/terra-go/httpclient"
+	"github.com/frostornge/terra-go/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -26,7 +26,7 @@ type TransactionService interface {
 	BroadcastTx(
 		ctx context.Context,
 		tx terraauth.StdTx,
-		mode terra.BroadcastMode,
+		mode types.BroadcastMode,
 	) (cosmostypes.TxResponse, error)
 	EstimateFee(
 		ctx context.Context,
@@ -91,7 +91,7 @@ func (svc transactionService) QueryTx(ctx context.Context, req QueryTxRequest) (
 func (svc transactionService) BroadcastTx(
 	ctx context.Context,
 	tx terraauth.StdTx,
-	mode terra.BroadcastMode,
+	mode types.BroadcastMode,
 ) (cosmostypes.TxResponse, error) {
 	var req = cosmosauthrest.BroadcastReq{
 		Tx:   tx,
