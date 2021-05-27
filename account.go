@@ -26,7 +26,7 @@ type Account interface {
 	GetChainId() string
 	Update(ctx context.Context) error
 	CreateTx(ctx context.Context, opts CreateTxOptions) (terraauth.StdSignMsg, error)
-	CreateAndSignTx(ctx context.Context, opts CreateTxOptions) (terraauth.StdTx, error)
+	CreateAndSignTx(ctx context.Context, opts CreateTxOptions) (terraauth.StdTx, terraauth.StdSignMsg, error)
 
 	cosmosauth.Account
 }
@@ -79,6 +79,7 @@ type CreateTxOptions struct {
 	Fee           *terraauth.StdFee
 	GasAdjustment float64
 	GasPrices     cosmostypes.DecCoins
+	Sequence      *uint64
 	Memo          string
 }
 
@@ -126,25 +127,32 @@ func (a *keyedAccount) CreateTx(ctx context.Context, opts CreateTxOptions) (terr
 		fee = *opts.Fee
 	}
 
+	sequence := a.GetSequence()
+	if opts.Sequence != nil {
+		if sequence < *opts.Sequence {
+			sequence = *opts.Sequence
+		}
+	}
+
 	return terraauth.StdSignMsg{
 		ChainID:       a.chainId,
 		AccountNumber: a.GetAccountNumber(),
-		Sequence:      a.GetSequence(),
+		Sequence:      sequence,
 		Fee:           fee,
 		Msgs:          opts.Msgs,
 		Memo:          opts.Memo,
 	}, nil
 }
 
-func (a *keyedAccount) CreateAndSignTx(ctx context.Context, opts CreateTxOptions) (terraauth.StdTx, error) {
+func (a *keyedAccount) CreateAndSignTx(ctx context.Context, opts CreateTxOptions) (terraauth.StdTx, terraauth.StdSignMsg, error) {
 	signMsg, err := a.CreateTx(ctx, opts)
 	if err != nil {
-		return terraauth.StdTx{}, errors.Wrap(err, "create tx")
+		return terraauth.StdTx{}, terraauth.StdSignMsg{}, errors.Wrap(err, "create tx")
 	}
 
 	signedTx, err := a.key.SignTx(signMsg)
 	if err != nil {
-		return terraauth.StdTx{}, errors.Wrap(err, "sign tx")
+		return terraauth.StdTx{}, terraauth.StdSignMsg{}, errors.Wrap(err, "sign tx")
 	}
-	return signedTx, nil
+	return signedTx, signMsg, nil
 }
