@@ -42,7 +42,7 @@ func (svc treasuryService) CalculateTax(ctx context.Context, coin cosmostypes.Co
 	taxCap := taxCapResp.TaxCap
 
 	tax := cosmostypes.NewDecFromInt(coin.Amount).Mul(taxRate).TruncateInt()
-	if tax.LT(taxCap) {
+	if tax.GT(taxCap) {
 		tax = taxCap
 	}
 	return tax, nil
