@@ -82,7 +82,7 @@ func (b baseContract) Execute(
 	}
 	createOption.Msgs = msgs
 
-	tx, err := acc.CreateAndSignTx(ctx, createOption)
+	tx, _, err := acc.CreateAndSignTx(ctx, createOption)
 	if err != nil {
 		return cosmostypes.TxResponse{}, errors.Wrap(err, "sign tx")
 	}
