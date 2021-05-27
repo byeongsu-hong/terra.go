@@ -113,3 +113,7 @@ func main() {
 }
 
 ```
+
+## LICENSE
+
+MIT
