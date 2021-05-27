@@ -41,7 +41,7 @@ func (t logTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			t.logger.Error("failed to read response body. err={}", err)
 		} else {
-			return resp, errors.New(string(rawBody))
+			return nil, errors.New(string(rawBody))
 		}
 	}
 
