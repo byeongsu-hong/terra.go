@@ -24,32 +24,24 @@ type Client interface {
 
 type client struct {
 	codec    *codec.Codec
-	host     string
-	basePath string
+	endpoint string
 	logger   logger.Logger
 	*http.Client
 }
 
-func New(codec *codec.Codec, host string, basePath string, schemes []string) Client {
+func New(codec *codec.Codec, endpoint string) Client {
 	if codec == nil {
 		codec = terraapp.MakeCodec()
 	}
 
-	schemeList := make(map[string]bool)
-	for _, scheme := range schemes {
-		schemeList[scheme] = true
-	}
-
 	transport := logTransport{
 		transport: http.DefaultTransport,
-		schemes:   schemeList,
 		logger:    logger.New("http/transport"),
 	}
 
 	return client{
 		codec:    codec,
-		host:     host,
-		basePath: basePath,
+		endpoint: endpoint,
 		logger:   logger.New("http/client"),
 		Client:   &http.Client{Transport: transport},
 	}
@@ -58,11 +50,11 @@ func New(codec *codec.Codec, host string, basePath string, schemes []string) Cli
 func (c client) Codec() *codec.Codec { return c.codec }
 
 func (c client) Request(payload RequestPayload) (*http.Response, error) {
-	u := &url.URL{
-		Scheme: "https",
-		Host:   c.host,
-		Path:   path.Join(c.basePath, payload.Path),
+	u, err := url.Parse(c.endpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse endpoint")
 	}
+	u.Path = path.Join(u.Path, payload.Path)
 
 	q := u.Query()
 	for k, v := range payload.Query {

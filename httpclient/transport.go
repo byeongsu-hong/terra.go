@@ -13,15 +13,10 @@ import (
 
 type logTransport struct {
 	transport http.RoundTripper
-	schemes   map[string]bool
 	logger    logger.Logger
 }
 
 func (t logTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	if ok := t.schemes[req.URL.Scheme]; !ok {
-		return nil, errors.Errorf("unacceptable scheme %s", req.URL.Scheme)
-	}
-
 	timer := time.Now()
 	resp, err := t.transport.RoundTrip(req)
 	if err != nil {
