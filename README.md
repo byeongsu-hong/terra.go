@@ -10,6 +10,18 @@
 $ go get github.com/frostornge/terra-go
 ```
 
+## Packages
+
+* bind
+  * contract binding helper [ref](./interface/anchor/money-market/market)
+* httpclient
+  * http middleware to process codec encoded respones
+* interface
+  * main contract binding (WIP)
+* service
+  * LCD biding
+* types
+
 ## How to use
 
 ``` golang
@@ -18,6 +30,7 @@ import (
   
   terra "github.com/frostornge/terra-go"
   "github.com/frostornge/terra-go/httpclient"
+  "github.com/frostornge/terra-go/types"
   
   "github.com/cosmos/cosmos-sdk/crypto/keys"
   cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -71,12 +84,12 @@ func main() {
 
 
   // example#1 - bank send
-  var (
-    to     cosmostypes.AccAddress
-    amount cosmostypes.Int
-  )
-
   {
+    var (
+      to     cosmostypes.AccAddress
+      amount cosmostypes.Int
+    )
+  
     tx, msg, err := acc.CreateAndSignTx(context.Background(), terra.CreateTxOptions{
       Msgs: []cosmostypes.Msg{
         bank.MsgSend{
@@ -91,7 +104,7 @@ func main() {
     })
     must(err)
     
-    txResp, err := lcdClient.Transaction().BroadcastTx(ctx, tx, "sync")
+    txResp, err := lcdClient.Transaction().BroadcastTx(ctx, tx, types.ModeBlock)
     must(err)
     
     log.Println(txResp.TxHash)
