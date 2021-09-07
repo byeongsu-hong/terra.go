@@ -3,9 +3,10 @@ package bind
 import (
 	"encoding/json"
 
+	"github.com/frostornge/terra-go/types"
+
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"github.com/terra-project/core/x/wasm"
 )
 
 func GenerateExecuteMsg(
@@ -13,12 +14,12 @@ func GenerateExecuteMsg(
 	contract cosmostypes.AccAddress,
 	executeMsg interface{},
 	coins cosmostypes.Coins,
-) (wasm.MsgExecuteContract, error) {
+) (types.MsgExecuteContract, error) {
 	rawExecuteMsg, err := json.Marshal(executeMsg)
 	if err != nil {
-		return wasm.MsgExecuteContract{}, errors.Wrap(err, "marshal execute message")
+		return types.MsgExecuteContract{}, errors.Wrap(err, "marshal execute message")
 	}
-	return wasm.MsgExecuteContract{
+	return types.MsgExecuteContract{
 		Sender:     sender,
 		Contract:   contract,
 		ExecuteMsg: rawExecuteMsg,

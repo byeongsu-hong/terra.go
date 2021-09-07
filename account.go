@@ -123,7 +123,6 @@ func (a *keyedAccount) CreateTx(ctx context.Context, opts CreateTxOptions) (terr
 				ChainID:       a.chainId,
 				AccountNumber: a.GetAccountNumber(),
 				Sequence:      sequence,
-				Fee:           terraauth.NewStdFee(0, resp.Balance),
 				Msgs:          opts.Msgs,
 				Memo:          opts.Memo,
 			},

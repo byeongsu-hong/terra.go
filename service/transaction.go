@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	terraauth "github.com/terra-project/core/x/auth"
-	terraauthutils "github.com/terra-project/core/x/auth/client/utils"
 )
 
 //go:generate mockgen -destination ../../../test/mocks/terra/service/service_transaction.go . TransactionService
@@ -142,11 +141,10 @@ func (svc transactionService) EstimateFee(
 			ChainID:       msg.ChainID,
 			AccountNumber: msg.AccountNumber,
 			Sequence:      msg.Sequence,
-			Fees:          msg.Fee.Amount,
 			GasPrices:     gasPrices,
-			Gas:           fmt.Sprintf("%d", msg.Fee.Gas),
+			Gas:           "auto",
 			GasAdjustment: gasAdjustment,
-			Simulate:      true,
+			Simulate:      false,
 		},
 		Msgs: msg.Msgs,
 	}
@@ -164,11 +162,13 @@ func (svc transactionService) EstimateFee(
 	}
 
 	var body struct {
-		Height string                         `json:"height"`
-		Result terraauthutils.EstimateFeeResp `json:"result"`
+		Height string `json:"height"`
+		Result struct {
+			Fee terraauth.StdFee `json:"fee"`
+		} `json:"result"`
 	}
 	if err := svc.client.RequestJSON(payload, &body); err != nil {
 		return terraauth.StdFee{}, errors.Wrap(err, "request json")
 	}
-	return terraauth.NewStdFee(body.Result.Gas, body.Result.Fees), nil
+	return body.Result.Fee, nil
 }
