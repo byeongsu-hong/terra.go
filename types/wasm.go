@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/json"
 
+	"github.com/cosmos/cosmos-sdk/codec"
+
 	"github.com/terra-project/core/x/wasm"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -35,12 +37,9 @@ func (w MsgExecuteContract) ValidateBasic() error {
 }
 
 func (w MsgExecuteContract) GetSignBytes() []byte {
-	return wasm.MsgExecuteContract{
-		Sender:     w.Sender,
-		Contract:   w.Contract,
-		ExecuteMsg: []byte(w.ExecuteMsg),
-		Coins:      w.Coins,
-	}.GetSignBytes()
+	cdc := codec.New()
+	cdc.RegisterConcrete(MsgExecuteContract{}, "wasm/MsgExecuteContract", nil)
+	return cosmostypes.MustSortJSON(cdc.MustMarshalJSON(w))
 }
 
 func (w MsgExecuteContract) GetSigners() []cosmostypes.AccAddress {
