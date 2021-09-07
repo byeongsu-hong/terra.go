@@ -107,16 +107,26 @@ func (a *keyedAccount) CreateTx(ctx context.Context, opts CreateTxOptions) (terr
 		)
 	}
 
+	sequence := a.GetSequence()
+	if opts.Sequence != nil {
+		if sequence < *opts.Sequence {
+			sequence = *opts.Sequence
+		}
+	}
+
 	var fee terraauth.StdFee
 	if opts.Fee == nil {
 		fee, err = a.client.Transaction().EstimateFee(
 			ctx,
-			terraauth.NewStdTx(
-				opts.Msgs,
-				terraauth.NewStdFee(0, resp.Balance),
-				[]terraauth.StdSignature{},
-				opts.Memo,
-			),
+			a.GetAddress().String(),
+			terraauth.StdSignMsg{
+				ChainID:       a.chainId,
+				AccountNumber: a.GetAccountNumber(),
+				Sequence:      sequence,
+				Fee:           terraauth.NewStdFee(0, resp.Balance),
+				Msgs:          opts.Msgs,
+				Memo:          opts.Memo,
+			},
 			fmt.Sprintf("%f", opts.GasAdjustment),
 			opts.GasPrices,
 		)
@@ -125,13 +135,6 @@ func (a *keyedAccount) CreateTx(ctx context.Context, opts CreateTxOptions) (terr
 		}
 	} else {
 		fee = *opts.Fee
-	}
-
-	sequence := a.GetSequence()
-	if opts.Sequence != nil {
-		if sequence < *opts.Sequence {
-			sequence = *opts.Sequence
-		}
 	}
 
 	return terraauth.StdSignMsg{

@@ -16,6 +16,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.1
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4
+	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.33.9
 	github.com/terra-project/core v0.4.2
 )

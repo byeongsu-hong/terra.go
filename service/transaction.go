@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/types/rest"
+
 	"github.com/frostornge/terra-go/httpclient"
 	"github.com/frostornge/terra-go/types"
 
@@ -30,7 +32,8 @@ type TransactionService interface {
 	) (cosmostypes.TxResponse, error)
 	EstimateFee(
 		ctx context.Context,
-		tx terraauth.StdTx,
+		from string,
+		msg terraauth.StdSignMsg,
 		gasAdjustment string,
 		gasPrices cosmostypes.DecCoins,
 	) (terraauth.StdFee, error)
@@ -124,14 +127,28 @@ func (svc transactionService) BroadcastTx(
 
 func (svc transactionService) EstimateFee(
 	ctx context.Context,
-	tx terraauth.StdTx,
+	from string,
+	msg terraauth.StdSignMsg,
 	gasAdjustment string,
 	gasPrices cosmostypes.DecCoins,
 ) (terraauth.StdFee, error) {
-	var req = terraauthutils.EstimateFeeReq{
-		Tx:            tx,
-		GasAdjustment: gasAdjustment,
-		GasPrices:     gasPrices,
+	var req = struct {
+		BaseReq rest.BaseReq      `json:"base_req"`
+		Msgs    []cosmostypes.Msg `json:"msgs"`
+	}{
+		BaseReq: rest.BaseReq{
+			From:          from,
+			Memo:          msg.Memo,
+			ChainID:       msg.ChainID,
+			AccountNumber: msg.AccountNumber,
+			Sequence:      msg.Sequence,
+			Fees:          msg.Fee.Amount,
+			GasPrices:     gasPrices,
+			Gas:           fmt.Sprintf("%d", msg.Fee.Gas),
+			GasAdjustment: gasAdjustment,
+			Simulate:      true,
+		},
+		Msgs: msg.Msgs,
 	}
 
 	rawPayloadBody, err := svc.codec.MarshalJSON(req)
