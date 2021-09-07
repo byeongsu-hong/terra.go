@@ -6,7 +6,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	terraassets "github.com/terra-project/core/types/assets"
+	terraassets "github.com/terra-money/core/types/assets"
 )
 
 var _ ExecutorMsg = (*market)(nil)

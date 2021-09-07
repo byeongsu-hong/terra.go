@@ -3,103 +3,62 @@ package terra
 import (
 	"encoding/hex"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	cosmosclienttx "github.com/cosmos/cosmos-sdk/client/tx"
+	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
+	cosmoscryptohd "github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cosmoscryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/secp256k1"
-	terraauth "github.com/terra-project/core/x/auth"
 )
 
 type Key interface {
 	AccAddress() cosmostypes.AccAddress
 	ValAddress() cosmostypes.ValAddress
-	PubKey() crypto.PubKey
+	PubKey() cosmoscryptotypes.PubKey
 
-	SignTx(msg terraauth.StdSignMsg) (terraauth.StdTx, error)
-	MakeSignature(msg terraauth.StdSignMsg) (terraauth.StdSignature, error)
+	SignTx(cosmosclienttx.Factory, cosmosclient.TxBuilder, bool) error
 }
 
+const (
+	rawKeyPassphrase = "raw_passphrase"
+	rawKeyUID        = "raw_uid"
+)
+
 type rawKey struct {
-	privKey secp256k1.PrivKeySecp256k1
+	keyring keyring.Keyring
 }
 
 func NewRawKey(hexed string) Key {
-	var k secp256k1.PrivKeySecp256k1
-	hex.Decode(k[:], []byte(hexed))
-	return rawKey{privKey: k}
-}
-
-func (r rawKey) AccAddress() cosmostypes.AccAddress { return r.privKey.PubKey().Address().Bytes() }
-func (r rawKey) ValAddress() cosmostypes.ValAddress { return r.privKey.PubKey().Address().Bytes() }
-func (r rawKey) PubKey() crypto.PubKey              { return r.privKey.PubKey() }
-
-func (r rawKey) SignTx(msg terraauth.StdSignMsg) (terraauth.StdTx, error) {
-	sign, err := r.MakeSignature(msg)
-	if err != nil {
-		return terraauth.StdTx{}, errors.Wrap(err, "make signature")
+	var k secp256k1.PrivKey
+	if _, err := hex.Decode(k.Key[:], []byte(hexed)); err != nil {
+		panic(err)
 	}
 
-	signedTx := terraauth.NewStdTx(
-		msg.Msgs,
-		msg.Fee,
-		[]terraauth.StdSignature{sign},
-		msg.Memo,
-	)
-	return signedTx, nil
-}
-
-func (r rawKey) MakeSignature(msg terraauth.StdSignMsg) (terraauth.StdSignature, error) {
-	sign, err := r.privKey.Sign(msg.Bytes())
-	if err != nil {
-		return terraauth.StdSignature{}, errors.Wrap(err, "sign with terra key")
+	armoredPrivKey := cosmoscrypto.EncryptArmorPrivKey(cosmoscryptotypes.PrivKey(&k), rawKeyPassphrase, string(cosmoscryptohd.Secp256k1.Name()))
+	keys := keyring.NewInMemory()
+	if err := keys.ImportPrivKey(rawKeyUID, armoredPrivKey, rawKeyPassphrase); err != nil {
+		panic(err)
 	}
-	return terraauth.StdSignature{
-		PubKey:    r.privKey.PubKey(),
-		Signature: sign,
-	}, nil
+	return rawKey{keyring: keys}
 }
 
-type walletKey struct {
-	name       string
-	passphrase string
-	info       keys.Info
-	wallet     keys.Keybase
-}
-
-func NewWalletKey(name, passphrase string, wallet keys.Keybase) (Key, error) {
-	info, err := wallet.Get(name)
+func (r rawKey) fetchKey() keyring.Info {
+	info, err := r.keyring.Key(rawKeyUID)
 	if err != nil {
-		return nil, errors.Wrap(err, "get account info from keybase")
+		panic(err)
 	}
-
-	return walletKey{
-		name:       name,
-		passphrase: passphrase,
-		info:       info,
-		wallet:     wallet,
-	}, nil
+	return info
 }
-
-func (w walletKey) AccAddress() cosmostypes.AccAddress { return w.info.GetAddress().Bytes() }
-func (w walletKey) ValAddress() cosmostypes.ValAddress { return w.info.GetAddress().Bytes() }
-func (w walletKey) PubKey() crypto.PubKey              { return w.info.GetPubKey() }
-
-func (w walletKey) SignTx(msg terraauth.StdSignMsg) (terraauth.StdTx, error) {
-	sign, err := w.MakeSignature(msg)
-	if err != nil {
-		return terraauth.StdTx{}, errors.Wrap(err, "make signature")
-	}
-
-	signedTx := terraauth.NewStdTx(
-		msg.Msgs,
-		msg.Fee,
-		[]terraauth.StdSignature{sign},
-		msg.Memo,
-	)
-	return signedTx, nil
+func (r rawKey) AccAddress() cosmostypes.AccAddress {
+	return r.fetchKey().GetPubKey().Address().Bytes()
 }
+func (r rawKey) ValAddress() cosmostypes.ValAddress {
+	return r.fetchKey().GetPubKey().Address().Bytes()
+}
+func (r rawKey) PubKey() cosmoscryptotypes.PubKey { return r.fetchKey().GetPubKey() }
 
-func (w walletKey) MakeSignature(msg terraauth.StdSignMsg) (terraauth.StdSignature, error) {
-	return terraauth.MakeSignature(w.wallet, w.name, w.passphrase, msg)
+func (r rawKey) SignTx(factory cosmosclienttx.Factory, builder cosmosclient.TxBuilder, overwriteSig bool) error {
+	return cosmosclienttx.Sign(factory.WithKeybase(r.keyring), rawKeyUID, builder, overwriteSig)
 }

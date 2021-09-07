@@ -2,10 +2,11 @@ package terra
 
 import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	terratypes "github.com/terra-project/core/types"
+	terratypes "github.com/terra-money/core/types"
 )
 
 func init() {
+
 	// use terra types
 	config := cosmostypes.GetConfig()
 	config.SetBech32PrefixForAccount(terratypes.Bech32PrefixAccAddr, terratypes.Bech32PrefixAccPub)

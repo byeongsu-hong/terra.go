@@ -8,30 +8,28 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"strings"
 
 	"github.com/airbloc/logger"
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
-	terraapp "github.com/terra-project/core/app"
+	encoding "github.com/terra-money/core/app/params"
 )
 
 type Client interface {
-	Codec() *codec.Codec
+	Codec() encoding.EncodingConfig
 	Request(payload RequestPayload) (*http.Response, error)
 	RequestJSON(payload RequestPayload, respBody interface{}) error
 }
 
 type client struct {
-	codec    *codec.Codec
+	codec    encoding.EncodingConfig
 	endpoint string
 	logger   logger.Logger
 	*http.Client
 }
 
-func New(codec *codec.Codec, endpoint string) Client {
-	if codec == nil {
-		codec = terraapp.MakeCodec()
+func New(codec encoding.EncodingConfig, endpoint string) Client {
+	if codec == (encoding.EncodingConfig{}) {
+		codec = encoding.MakeEncodingConfig()
 	}
 
 	transport := logTransport{
@@ -47,7 +45,7 @@ func New(codec *codec.Codec, endpoint string) Client {
 	}
 }
 
-func (c client) Codec() *codec.Codec { return c.codec }
+func (c client) Codec() encoding.EncodingConfig { return c.codec }
 
 func (c client) Request(payload RequestPayload) (*http.Response, error) {
 	u, err := url.Parse(c.endpoint)
@@ -81,28 +79,28 @@ func (c client) RequestJSON(payload RequestPayload, respBody interface{}) error 
 	}
 	defer resp.Body.Close()
 
-	if strings.HasPrefix(payload.Path, "/wasm/contracts/") {
-		// json
-		var buf bytes.Buffer
-		resp.Body = ioutil.NopCloser(io.TeeReader(resp.Body, &buf))
+	//if strings.HasPrefix(payload.Path, "/wasm/contracts/") {
+	// json
+	var buf bytes.Buffer
+	resp.Body = ioutil.NopCloser(io.TeeReader(resp.Body, &buf))
 
-		if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
-			if rawBody, err := ioutil.ReadAll(&buf); err == nil {
-				c.logger.Debug("failed to parse response body. rawBody={}", string(rawBody))
-			}
-			return errors.Wrap(err, "parse response body with json")
-		}
-	} else {
-		// amino
-		rawBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "read raw body")
-		}
-
-		if err := c.codec.UnmarshalJSON(rawBody, respBody); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
+		if rawBody, err := ioutil.ReadAll(&buf); err == nil {
 			c.logger.Debug("failed to parse response body. rawBody={}", string(rawBody))
-			return errors.Wrap(err, "parse response body with codec")
 		}
+		return errors.Wrap(err, "parse response body with json")
 	}
+	//} else {
+	//	// amino
+	//	rawBody, err := ioutil.ReadAll(resp.Body)
+	//	if err != nil {
+	//		return errors.Wrap(err, "read raw body")
+	//	}
+	//
+	//	if err := c.codec.Amino.UnmarshalJSON(rawBody, respBody); err != nil {
+	//		c.logger.Debug("failed to parse response body. rawBody={}", string(rawBody))
+	//		return errors.Wrap(err, "parse response body with codec")
+	//	}
+	//}
 	return nil
 }

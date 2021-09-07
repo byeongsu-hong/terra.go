@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	terratypes "github.com/terra-project/core/types"
+	terratypes "github.com/terra-money/core/types"
 )
 
 func TestMain(m *testing.M) {
@@ -15,7 +15,6 @@ func TestMain(m *testing.M) {
 	config.SetBech32PrefixForValidator(terratypes.Bech32PrefixValAddr, terratypes.Bech32PrefixValPub)
 	config.SetBech32PrefixForConsensusNode(terratypes.Bech32PrefixConsAddr, terratypes.Bech32PrefixConsPub)
 	config.SetCoinType(terratypes.CoinType)
-	config.SetFullFundraiserPath(terratypes.FullFundraiserPath)
 	config.Seal()
 
 	code := m.Run()

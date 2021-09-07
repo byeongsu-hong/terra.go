@@ -7,37 +7,30 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/frostornge/terra-go/httpclient"
-	"github.com/frostornge/terra-go/types"
-
-	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	cosmosauthrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	cosmostx "github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/frostornge/terra-go/httpclient"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	terraauth "github.com/terra-project/core/x/auth"
-	terraauthutils "github.com/terra-project/core/x/auth/client/utils"
+	encoding "github.com/terra-money/core/app/params"
 )
 
 //go:generate mockgen -destination ../../../test/mocks/terra/service/service_transaction.go . TransactionService
 type TransactionService interface {
-	GetTxByHash(ctx context.Context, txHash string) (cosmostypes.TxResponse, error)
-	QueryTx(ctx context.Context, req QueryTxRequest) (QueryTxResponse, error)
+	GetTx(ctx context.Context, txHash string) (cosmostypes.TxResponse, error)
 	BroadcastTx(
 		ctx context.Context,
-		tx terraauth.StdTx,
-		mode types.BroadcastMode,
+		tx cosmostx.Tx,
+		mode cosmostx.BroadcastMode,
 	) (cosmostypes.TxResponse, error)
-	EstimateFee(
+	Simulate(
 		ctx context.Context,
-		tx terraauth.StdTx,
-		gasAdjustment string,
-		gasPrices cosmostypes.DecCoins,
-	) (terraauth.StdFee, error)
+		txBytes []byte,
+	) (cosmostypes.GasInfo, error)
 }
 
 type transactionService struct {
-	codec  *codec.Codec
+	codec  encoding.EncodingConfig
 	client httpclient.Client
 }
 
@@ -45,60 +38,35 @@ func NewTransactionService(client httpclient.Client) TransactionService {
 	return transactionService{codec: client.Codec(), client: client}
 }
 
-func (svc transactionService) GetTxByHash(
+func (svc transactionService) GetTx(
 	ctx context.Context,
 	txHash string,
 ) (cosmostypes.TxResponse, error) {
 	var payload = httpclient.RequestPayload{
 		Context: ctx,
 		Method:  http.MethodGet,
-		Path:    fmt.Sprintf("/txs/%s", txHash),
+		Path:    fmt.Sprintf("/cosmos/tx/v1beta1/txs/{%s}", txHash),
 	}
 
-	var body cosmostypes.TxResponse
+	var body cosmostx.GetTxResponse
 	if err := svc.client.RequestJSON(payload, &body); err != nil {
 		return cosmostypes.TxResponse{}, errors.Wrap(err, "request json")
 	}
-	return body, nil
-}
-
-func (svc transactionService) QueryTx(ctx context.Context, req QueryTxRequest) (QueryTxResponse, error) {
-	var payload = httpclient.RequestPayload{
-		Context: ctx,
-		Method:  http.MethodGet,
-		Path:    "/txs",
-		Query:   make(map[string]string),
-	}
-
-	if req.Page != nil {
-		req.Query["page"] = *req.Page
-	}
-	if req.Limit != nil {
-		req.Query["limit"] = *req.Limit
-	}
-
-	for k, v := range req.Query {
-		payload.Query[k] = fmt.Sprintf("%v", v)
-	}
-
-	var body QueryTxResponse
-	if err := svc.client.RequestJSON(payload, &body); err != nil {
-		return QueryTxResponse{}, errors.Wrap(err, "request json")
-	}
-	return body, nil
+	return *body.GetTxResponse(), nil
 }
 
 func (svc transactionService) BroadcastTx(
 	ctx context.Context,
-	tx terraauth.StdTx,
-	mode types.BroadcastMode,
+	tx cosmostx.Tx,
+	mode cosmostx.BroadcastMode,
 ) (cosmostypes.TxResponse, error) {
-	var req = cosmosauthrest.BroadcastReq{
-		Tx:   tx,
-		Mode: string(mode),
+	txBytes, err := tx.Marshal()
+	if err != nil {
+		return cosmostypes.TxResponse{}, errors.Wrap(err, "marshal tx")
 	}
 
-	rawPayloadBody, err := svc.codec.MarshalJSON(req)
+	var req = cosmostx.BroadcastTxRequest{TxBytes: txBytes, Mode: mode}
+	rawPayloadBody, err := svc.codec.Marshaler.MarshalJSON(&req)
 	if err != nil {
 		return cosmostypes.TxResponse{}, errors.Wrap(err, "marshal request body")
 	}
@@ -106,52 +74,42 @@ func (svc transactionService) BroadcastTx(
 	var payload = httpclient.RequestPayload{
 		Context: ctx,
 		Method:  http.MethodPost,
-		Path:    "/txs",
+		Path:    "/cosmos/tx/v1beta1/txs",
 		Body:    bytes.NewReader(rawPayloadBody),
 	}
 
-	var body cosmostypes.TxResponse
+	var body cosmostx.BroadcastTxResponse
 	if err := svc.client.RequestJSON(payload, &body); err != nil {
 		return cosmostypes.TxResponse{}, errors.Wrap(err, "request json")
 	}
 	time.Sleep(1 * time.Second) // wait for lcd
 
-	if body.Code != abcitypes.CodeTypeOK {
-		return body, errors.New(body.RawLog)
+	if body.TxResponse.Code != abcitypes.CodeTypeOK {
+		return cosmostypes.TxResponse{}, errors.New(body.TxResponse.RawLog)
 	}
-	return body, nil
+	return *body.GetTxResponse(), nil
 }
 
-func (svc transactionService) EstimateFee(
+func (svc transactionService) Simulate(
 	ctx context.Context,
-	tx terraauth.StdTx,
-	gasAdjustment string,
-	gasPrices cosmostypes.DecCoins,
-) (terraauth.StdFee, error) {
-	var req = terraauthutils.EstimateFeeReq{
-		Tx:            tx,
-		GasAdjustment: gasAdjustment,
-		GasPrices:     gasPrices,
-	}
-
-	rawPayloadBody, err := svc.codec.MarshalJSON(req)
+	txBytes []byte,
+) (cosmostypes.GasInfo, error) {
+	var req = cosmostx.SimulateRequest{TxBytes: txBytes}
+	rawPayloadBody, err := svc.codec.Marshaler.MarshalJSON(&req)
 	if err != nil {
-		return terraauth.StdFee{}, errors.Wrap(err, "marshal request body")
+		return cosmostypes.GasInfo{}, errors.Wrap(err, "marshal request body")
 	}
 
 	var payload = httpclient.RequestPayload{
 		Context: ctx,
 		Method:  http.MethodPost,
-		Path:    "/txs/estimate_fee",
+		Path:    "/cosmos/tx/v1beta1/simulate",
 		Body:    bytes.NewReader(rawPayloadBody),
 	}
 
-	var body struct {
-		Height string                         `json:"height"`
-		Result terraauthutils.EstimateFeeResp `json:"result"`
-	}
+	var body cosmostx.SimulateResponse
 	if err := svc.client.RequestJSON(payload, &body); err != nil {
-		return terraauth.StdFee{}, errors.Wrap(err, "request json")
+		return cosmostypes.GasInfo{}, errors.Wrap(err, "request json")
 	}
-	return terraauth.NewStdFee(body.Result.Gas, body.Result.Fees), nil
+	return *body.GetGasInfo(), nil
 }

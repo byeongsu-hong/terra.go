@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	terrawasm "github.com/terra-project/core/x/wasm"
+	terrawasm "github.com/terra-money/core/x/wasm"
 )
 
 //go:generate mockgen -destination ../../../test/mocks/terra/service/service_contract.go . ContractService

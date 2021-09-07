@@ -5,7 +5,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"github.com/terra-project/core/x/wasm"
+	wasm "github.com/terra-money/core/x/wasm/types"
 )
 
 func GenerateExecuteMsg(
@@ -19,8 +19,8 @@ func GenerateExecuteMsg(
 		return wasm.MsgExecuteContract{}, errors.Wrap(err, "marshal execute message")
 	}
 	return wasm.MsgExecuteContract{
-		Sender:     sender,
-		Contract:   contract,
+		Sender:     sender.String(),
+		Contract:   contract.String(),
 		ExecuteMsg: rawExecuteMsg,
 		Coins:      coins,
 	}, nil

@@ -9,14 +9,6 @@ import (
 
 type Q map[string]interface{}
 
-type BroadcastMode string
-
-const (
-	ModeBlock BroadcastMode = "block"
-	ModeSync  BroadcastMode = "sync"
-	ModeAsync BroadcastMode = "async"
-)
-
 type TokensHuman struct {
 	Addr   cosmostypes.AccAddress `json:"addr"`
 	Amount cosmostypes.Int        `json:"amount"`

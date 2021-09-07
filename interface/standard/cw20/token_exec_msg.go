@@ -8,7 +8,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	terratypes "github.com/terra-project/core/types"
+	terratypes "github.com/terra-money/core/types"
 )
 
 var _ ExecutorMsg = (*token)(nil)

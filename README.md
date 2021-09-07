@@ -34,8 +34,8 @@ import (
   
   "github.com/cosmos/cosmos-sdk/crypto/keys"
   cosmostypes "github.com/cosmos/cosmos-sdk/types"
-  terraapp "github.com/terra-project/core/app"
-  terratypes "github.com/terra-project/core/types"
+  terraapp "github.com/terra-money/core/app"
+  terratypes "github.com/terra-money/core/types"
 )
 
 func must(err error) {
