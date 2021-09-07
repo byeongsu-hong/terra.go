@@ -99,7 +99,6 @@ func (c client) RequestJSON(payload RequestPayload, respBody interface{}) error 
 			return errors.Wrap(err, "read raw body")
 		}
 
-		c.logger.Debug("response body: {}", string(rawBody))
 		if err := c.codec.UnmarshalJSON(rawBody, respBody); err != nil {
 			c.logger.Debug("failed to parse response body. rawBody={}", string(rawBody))
 			return errors.Wrap(err, "parse response body with codec")
